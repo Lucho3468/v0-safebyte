@@ -37,7 +37,7 @@ SafeByte is a production-ready web application that helps people with food aller
 
 This project requires the following environment variables (already configured in Vercel):
 
-```bash
+\`\`\`bash
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -45,16 +45,16 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 # Database (auto-configured by Supabase integration)
 POSTGRES_URL=your_postgres_url
-```
+\`\`\`
 
 ### Installation
 
 1. Clone the repository or download the ZIP
 2. Install dependencies:
 
-```bash
+\`\`\`bash
 npm install
-```
+\`\`\`
 
 3. Run the database scripts (they will execute automatically when deployed):
    - `scripts/001_create_tables.sql` - Creates all necessary tables with RLS
@@ -63,9 +63,9 @@ npm install
 
 4. Start the development server:
 
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 5. Open [http://localhost:3000](http://localhost:3000)
 
@@ -98,7 +98,7 @@ All tables are protected with Row Level Security (RLS) policies.
 3. Click "Ingest Menu" to add/update restaurant menus
 4. Format:
 
-```json
+\`\`\`json
 {
   "restaurant": {
     "name": "Restaurant Name",
@@ -120,7 +120,7 @@ All tables are protected with Row Level Security (RLS) policies.
     }
   ]
 }
-```
+\`\`\`
 
 ## Deployment
 
