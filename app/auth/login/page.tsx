@@ -25,15 +25,29 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      if (error) throw error
+
+      if (signInError) {
+        throw new Error(signInError.message)
+      }
+
+      if (!data.session) {
+        throw new Error("No session created. Please try again.")
+      }
+
+      // Wait a moment for the session to be fully established
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      // Redirect to home page
       router.push("/")
       router.refresh()
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      const errorMessage = error instanceof Error ? error.message : "An error occurred while logging in"
+      setError(errorMessage)
+      console.error("Login error:", error)
     } finally {
       setIsLoading(false)
     }
@@ -59,6 +73,7 @@ export default function LoginPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -69,11 +84,23 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
-                {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+                {error && (
+                  <div className="p-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800">
+                    <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+                  </div>
+                )}
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Logging in..." : "Login"}
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Logging in...
+                    </div>
+                  ) : (
+                    "Login"
+                  )}
                 </Button>
               </div>
               <div className="mt-4 text-center text-sm">
