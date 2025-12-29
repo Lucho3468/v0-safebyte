@@ -1,21 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
-
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
-
-interface UserProfile {
-  allergies: string[]
-  dietTags: string[]
-  severityLevels: Record<string, "mild" | "moderate" | "severe">
-  notes: string
-}
-
-interface Message {
-  role: "user" | "assistant"
-  content: string
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,7 +15,7 @@ User's Dietary Profile:
 ${
   userProfile.allergies.length > 0
     ? `Allergies: ${userProfile.allergies
-        .map((allergy) => {
+        .map((allergy: string) => {
           const severity = userProfile.severityLevels[allergy] || "moderate"
           return `${allergy} (${severity})`
         })
@@ -53,9 +36,9 @@ Your responsibilities:
 
 Important: You are an assistant, not a medical professional. Always encourage users to verify ingredients with restaurants and consult medical professionals if needed.`
 
-    // Prepare conversation history
-    const messages: Message[] = [
-      ...conversationHistory.slice(-10), // Keep last 10 messages for context
+    // Prepare messages for Claude
+    const messages = [
+      ...conversationHistory.slice(-10),
       {
         role: "user",
         content: message,
@@ -63,24 +46,35 @@ Important: You are an assistant, not a medical professional. Always encourage us
     ]
 
     // Call Claude API
-    const response = await client.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      })),
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.ANTHROPIC_API_KEY || "",
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: messages,
+      }),
     })
 
-    // Extract the text content from the response
-    const assistantMessage = response.content[0]
-    if (assistantMessage.type !== "text") {
-      throw new Error("Unexpected response type from Claude")
+    if (!response.ok) {
+      const error = await response.json()
+      console.error("Claude API error:", error)
+      return NextResponse.json(
+        { error: error.error?.message || "Failed to get response from Claude" },
+        { status: 500 }
+      )
     }
 
+    const data = await response.json()
+    const assistantMessage = data.content[0]?.text || "I couldn't generate a response."
+
     return NextResponse.json({
-      response: assistantMessage.text,
+      response: assistantMessage,
     })
   } catch (error) {
     console.error("Chat error:", error)
