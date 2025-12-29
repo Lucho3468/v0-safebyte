@@ -30,7 +30,6 @@ export function Header() {
 
   if (isAuthPage) return null
 
-  // Show loading state while checking authentication
   if (isLoading) {
     return (
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -89,4 +88,24 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={ha
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" asChild>
+                <Link href="/auth/login">Login</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/auth/signup">Sign up</Link>
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  )
+}
