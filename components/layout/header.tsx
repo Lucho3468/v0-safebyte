@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button"
 import { User, LogOut, Settings } from "lucide-react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import { useState, useEffect } from "react"
-import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { useAuth } from "@/components/auth-provider"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -18,31 +16,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export function Header() {
-  const [user, setUser] = useState<SupabaseUser | null>(null)
+  const { user, isLoading, logout } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const supabase = createClient()
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
-    }
-    fetchUser()
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [supabase])
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    await logout()
     router.push("/auth/login")
     router.refresh()
   }
@@ -50,6 +29,22 @@ export function Header() {
   const isAuthPage = pathname?.startsWith("/auth")
 
   if (isAuthPage) return null
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <span className="text-lg font-bold">SB</span>
+            </div>
+            <span className="text-xl font-bold">SafeByte</span>
+          </Link>
+        </div>
+      </header>
+    )
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
