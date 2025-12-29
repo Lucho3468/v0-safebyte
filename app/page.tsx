@@ -12,34 +12,63 @@ import { TrendingTab } from "@/components/tabs/trending-tab"
 import { SavedTab } from "@/components/tabs/saved-tab"
 import { MapTab } from "@/components/tabs/map-tab"
 import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/components/auth-provider"
+import { useRouter } from "next/navigation"
 
 export default function HomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>([])
   const [selectedDietTags, setSelectedDietTags] = useState<string[]>([])
   const [activeTab, setActiveTab] = useState("trending")
+  const { user, isLoading: authLoading } = useAuth()
+  const router = useRouter()
   const supabase = createClient()
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/auth/login")
+    }
+  }, [user, authLoading, router])
 
   // Load user profile on mount
   useEffect(() => {
     const loadProfile = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
+      if (!user) return
+
+      try {
         const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
         if (profile) {
           setSelectedAllergies(profile.allergies || [])
           setSelectedDietTags(profile.diet_tags || [])
         }
+      } catch (error) {
+        console.error("Error loading profile:", error)
       }
     }
     loadProfile()
-  }, [supabase])
+  }, [user, supabase])
 
   const handleFilterChange = (allergies: string[], dietTags: string[]) => {
     setSelectedAllergies(allergies)
     setSelectedDietTags(dietTags)
+  }
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </main>
+    )
+  }
+
+  // If user is not authenticated, don't render the page content
+  if (!user) {
+    return null
   }
 
   return (
